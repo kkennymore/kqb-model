@@ -1,9 +1,9 @@
-# KQBModel.js
+# KQBModel ORM
 
-`KQBModel` is a **chainable query builder and CRUD abstraction** for Node.js.  
+`KQBModel ORM` is a **chainable query builder and CRUD abstraction** for Node.js.  
 It’s designed to be **extended** into application-specific models, making it easy to write clean, reusable database queries without repetitive SQL.
 
-`KQBModel` provides a clean, object-oriented interface for building SQL queries and performing CRUD operations in Node.js.  
+`KQBModel ORM` provides a clean, object-oriented interface for building SQL queries and performing CRUD operations in Node.js.  
 Designed with developers from OOP and Laravel backgrounds in mind, it offers:
 
 - Chainable query builder methods (`select`, `where`, `join`, `groupBy`, etc.) similar to Eloquent.
@@ -12,14 +12,14 @@ Designed with developers from OOP and Laravel backgrounds in mind, it offers:
 - Transaction support for atomic operations.
 - Easy extension to create domain-specific models, promoting reusable and maintainable code.
 
-If you’re familiar with Laravel’s Eloquent ORM, `KQBModel` brings the same developer-friendly patterns and fluent syntax to Node.js.
+If you’re familiar with Laravel’s Eloquent ORM, `KQBModel ORM` brings the same developer-friendly patterns and fluent syntax to Node.js.
 
 ---
 
 ## Table of Contents
 
 - [Installation](#installation)
-- [Extending KQBModel in Your App](#extending-KQBModel-in-your-app)
+- [Extending KQBModel ORM in Your App](#extending-KQBModel ORM-in-your-app)
 - [Query Builder Methods with Real Usage](#query-builder-methods-with-real-usage)
 - [Execution Methods](#execution-methods)
 - [CRUD Operations](#crud-operations)
@@ -36,14 +36,14 @@ npm install kqb-model
 
 ---
 
-## Extending KQBModel in Your App
+## Extending KQBModel ORM in Your App
 
-In a real-world application, you would **extend** `KQBModel` to create your own domain-specific model classes and parse your config file and Redis Object to the super() constructor of the class that extends  `KQBModel` class:
+In a real-world application, you would **extend** `KQBModel ORM` to create your own domain-specific model classes and parse your config file and Redis Object to the super() constructor of the class that extends  `KQBModel ORM` class:
 ```js
 // models/UserModel.js
-const KQBModel = require('kqb-model');
+const KQBModel ORM = require('kqb-model');
 
-export default class UserModel extends KQBModel {
+export default class UserModel extends KQBModel ORM {
   constructor() {
     super(config, RadisService);
   }
