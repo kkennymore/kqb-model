@@ -352,6 +352,6 @@ This README includes:
 * **Transaction support**
 * **Detailed KCache documentation** (all KV, hash, list, set, pub/sub)
 * **Usage examples**
-* Ready for GitHub or npm.
 
+contact: kennethusiobaifo@yahoo.com, github: kkennymore
 ---
