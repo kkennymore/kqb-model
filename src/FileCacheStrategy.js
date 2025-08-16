@@ -72,7 +72,7 @@ async function walkKeys(dir, keys = []) {
 }
 
 const FileCacheStrategy = {
-  async init() {
+  async init(config) {
     await fsp.mkdir(CACHE_DIR, { recursive: true });
     console.log('✅ File cache initialized');
     return true;

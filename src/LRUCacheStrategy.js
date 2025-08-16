@@ -23,7 +23,7 @@ let cache = null;
 
 const LRUCacheStrategy = {
   /** Initialize the in-memory cache */
-  async init() {
+  async init(config) {
     try {
       cache = new LRUCache({
         max: 1000,

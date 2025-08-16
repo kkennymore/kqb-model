@@ -1,6 +1,6 @@
 {
   "name": "kqb-model",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A chainable query builder and CRUD abstraction for Node.js",
   "main": "dist/KQBModel.js",
   "types": "dist/index.d.ts",
@@ -21,7 +21,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "mkdir -p dist && cp src/KQBModel.js dist/KQBModel.js && cp src/index.d.ts dist/index.d.ts",
+    "build": "cpx \"src/**/*.{js,ts}\" dist",
     "prepublishOnly": "npm run build"
   },
   "engines": {
@@ -31,6 +31,7 @@
     "@upstash/redis": "^1.35.3",
     "app-root-path": "^3.1.0",
     "cassandra-driver": "^4.8.0",
+    "cpx": "^1.5.0",
     "fs-extra": "^11.3.0",
     "kqb-model": "^1.0.0",
     "lodash": "^4.17.21",

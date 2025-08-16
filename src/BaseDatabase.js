@@ -16,7 +16,7 @@
  * await db.disconnect();
  */
 
-const getDatabaseAdapter  = require("./database/DatabaseFactory");
+const getDatabaseAdapter  = require("./DatabaseFactory");
 
 class BaseDatabase {
   /**

@@ -1,5 +1,5 @@
-const BaseDatabase = require("../database/BaseDatabase");
-const KCache = require("./../cache/RedisService");
+const BaseDatabase = require("./BaseDatabase");
+const KCache = require("./RedisService");
 
 /**
  * Example configuration object for initializing KQBModel.

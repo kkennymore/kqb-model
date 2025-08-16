@@ -13,7 +13,6 @@
  */
 
 const redis = require('redis');
-const config = require('../../../config/config');
 
 let client = null;
 
@@ -22,7 +21,7 @@ const RedisStrategy = {
    * Initialize Redis connection
    * @returns {Promise<boolean>}
    */
-  async init() {
+  async init(config) {
     try {
       client = redis.createClient({
         socket: {

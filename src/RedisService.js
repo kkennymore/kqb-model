@@ -1,20 +1,20 @@
-const RedisStrategy = require('./strategies/RedisStrategy');
-const UpstashStrategy = require('./strategies/UpstashStrategy');
-const FileCacheStrategy = require('./strategies/FileCacheStrategy');
-const LRUCacheStrategy = require('./strategies/LRUCacheStrategy');
+const RedisStrategy = require('./RedisStrategy');
+const UpstashStrategy = require('./UpstashStrategy');
+const FileCacheStrategy = require('./FileCacheStrategy');
+const LRUCacheStrategy = require('./LRUCacheStrategy');
 
 let strategy = null;
 
 async function initCache(config) {
   const system = String(config.cache_system || '').trim().toLowerCase();
 
-  if (system === 'redis' && await RedisStrategy.init()) {
+  if (system === 'redis' && await RedisStrategy.init(config)) {
     strategy = RedisStrategy;
-  } else if (system === 'upstash' && await UpstashStrategy.init()) {
+  } else if (system === 'upstash' && await UpstashStrategy.init(config)) {
     strategy = UpstashStrategy;
-  } else if (system === 'lru' && await LRUCacheStrategy.init()) {
+  } else if (system === 'lru' && await LRUCacheStrategy.init(config)) {
     strategy = LRUCacheStrategy;
-  } else if (system === 'file' && await FileCacheStrategy.init()) {
+  } else if (system === 'file' && await FileCacheStrategy.init(config)) {
     strategy = FileCacheStrategy;
   } else {
     console.warn(`⚠️ No valid cache strategy initialized for: "${system}". Using no-op cache.`);

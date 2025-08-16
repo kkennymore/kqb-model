@@ -13,7 +13,6 @@
  */
 
 const { Redis } = require('@upstash/redis');
-const config = require('../../../config/config');
 
 let redis = null;
 
@@ -22,7 +21,7 @@ const UpstashStrategy = {
    * Initialize Upstash connection
    * @returns {Promise<boolean>}
    */
-  async init() {
+  async init(config) {
     try {
       redis = new Redis({
         url: config?.upstash?.url,

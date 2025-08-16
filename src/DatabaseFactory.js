@@ -6,11 +6,10 @@
  * @returns {Object} Database adapter instance
  * @throws {Error} If the configured database type is unsupported
  */
-const MySQLAdapter = require("./adapters/MySQLAdapter");
-const config = require('../config/config');
-const PostgresAdapter = require("./adapters/PostgresSQLAdapter");
-const MongoDBAdapter = require("./adapters/MongoDBAdapter");
-const CassandraAdapter = require("./adapters/CassandraAdapter");
+const MySQLAdapter = require("./MySQLAdapter");
+const PostgresAdapter = require("./PostgresSQLAdapter");
+const MongoDBAdapter = require("./MongoDBAdapter");
+const CassandraAdapter = require("./CassandraAdapter");
 
 
 function getDatabaseAdapter(config) {
