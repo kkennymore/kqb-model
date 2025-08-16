@@ -8,7 +8,7 @@ Designed with developers from OOP and Laravel backgrounds in mind, it offers:
 
 - Chainable query builder methods (`select`, `where`, `join`, `groupBy`, etc.) similar to Eloquent.
 - Active Record-style CRUD operations (`insert`, `update`, `delete`, `firstOrCreate`, `updateOrInsert`).
-- Integrated caching support with Redis for improved performance.
+- Integrated caching support via `KCache` with Redis, Upstash, File, or LRU.
 - Transaction support for atomic operations.
 - Easy extension to create domain-specific models, promoting reusable and maintainable code.
 
@@ -19,12 +19,15 @@ If you’re familiar with Laravel’s Eloquent ORM, `KQBModel ORM` brings the sa
 ## Table of Contents
 
 - [Installation](#installation)
-- [Extending KQBModel ORM in Your App](#extending-KQBModel ORM-in-your-app)
-- [Query Builder Methods with Real Usage](#query-builder-methods-with-real-usage)
+- [Configuration](#configuration)
+- [Extending KQBModel ORM in Your App](#extending-kqbmodel-orm-in-your-app)
+- [Query Builder Methods](#query-builder-methods)
 - [Execution Methods](#execution-methods)
 - [CRUD Operations](#crud-operations)
 - [Transaction Support](#transaction-support)
+- [KCache (Caching) Methods](#kcache-caching-methods)
 - [Error Handling](#error-handling)
+- [License](#license)
 
 ---
 
@@ -36,265 +39,186 @@ npm install kqb-model
 
 ---
 
+## Configuration
+
+The `KQBModel` constructor expects a configuration object:
+
+```js
+const config = {
+  db: {
+    type: 'mysql',
+    host: 'localhost',
+    port: 3306,
+    user: 'userDb',
+    password: 'pass123',
+    database: 'myDatabase',
+    connectionLimit: 10,
+    keyspace: 'oaadsystem',
+    dataCenter: 'datacenter1'
+  },
+  redis: {
+    host: "localhost",
+    port: 6379,
+    ttl: 60 * 5
+  },
+  upstash: {
+    url: "https://maximum-camel-8387.upstash.io",
+    token: "ASDDAAIjcDFjNzBlOTg0MWFhN2I0N2YwYjRkMWE3YTFmZjc4OTk1MHAxMA"
+  },
+  cache_system: "redis",  // Options: "redis", "upstash", "lru", "file"
+  activateCache: true
+};
+```
+
+* `db`: Database connection details.
+* `redis`: Local Redis cache configuration.
+* `upstash`: Cloud Redis cache (optional).
+* `cache_system`: Defines which cache to use.
+* `activateCache`: Boolean flag to enable/disable caching.
+
+---
+
 ## Extending KQBModel ORM in Your App
 
-In a real-world application, you would **extend** `KQBModel ORM` to create your own domain-specific model classes and parse your config file and Redis Object to the super() constructor of the class that extends  `KQBModel ORM` class:
 ```js
 // models/UserModel.js
-const KQBModel ORM = require('kqb-model');
+const { KQBModel, KCache } = require('kqb-model');
 
-export default class UserModel extends KQBModel ORM {
+class UserModel extends KQBModel {
   constructor() {
-    super(config, RadisService);
+    super(config); // Pass the config object
+  }
+
+  async initCache() {
+    await KCache.init(config); // Initialize caching system
+  }
+
+  async findActiveUsers() {
+    return this.select(['id', 'name'])
+      .table('users')
+      .where('status = ?', ['active'])
+      .get();
   }
 }
+
+module.exports = UserModel;
 ```
 
-Then you can create **methods inside `UserModel`** that use the builder methods in a real query context.
-
----
-
-## Query Builder Methods with Real Usage
-
-Below are **all builder methods** with **inside-a-model examples** and **detailed explanations**.
-
----
-
-### 1. `select(columns)`
+**Usage:**
 
 ```js
-// Get only ID and name of active users
-async getActiveUserNames() {
-  return this.select(['id', 'name'])   // Only fetch required columns
-    .table('users')                    // Table name
-    .where('status = ?', ['active'])   // Filter active users
-    .get();                            // Execute and return results
-}
-```
+const UserModel = require('./models/UserModel');
+const users = new UserModel();
 
-**Why:** Reduces payload size by selecting only needed fields.
+await users.initCache();
+const activeUsers = await users.findActiveUsers();
+```
 
 ---
 
-### 2. `distinct(columns)`
+## Query Builder Methods
+
+### `select(columns)`
 
 ```js
-// Get unique list of user roles
-async getUniqueRoles() {
-  return this.distinct(['role'])       // Avoid duplicates
-    .table('users')
-    .get();
-}
+this.select(['id','name']).table('users').where('status = ?', ['active']).get();
 ```
 
-**Why:** Use when duplicates in results are not needed.
-
----
-
-### 3. `count(column, alias)`
+### `distinct(columns)`
 
 ```js
-// Count how many active users exist
-async getActiveUserCount() {
-  return this.count('id', 'total_users')
-    .table('users')
-    .where('status = ?', ['active'])
-    .first();
-}
+this.distinct(['role']).table('users').get();
 ```
 
-**Why:** Efficiently get a count without loading all rows.
-
----
-
-### 4. `table(name)`
+### `count(column, alias)`
 
 ```js
-// List all products
-async getAllProducts() {
-  return this.table('products')
-    .get();
-}
+this.count('id','total_users').table('users').where('status=?',['active']).first();
 ```
 
-**Why:** Specifies the table to query from.
-
----
-
-### 5. `where(condition, params)`
+### `table(name)`
 
 ```js
-// Find a user by email
-async findByEmail(email) {
-  return this.select(['id', 'name', 'email'])
-    .table('users')
-    .where('email = ?', [email])   // Parameter binding prevents SQL injection
-    .first();
-}
+this.table('products').get();
 ```
 
-**Why:** Safe filtering with placeholders.
-
----
-
-### 6. `orWhere(condition, params)`
+### `where(condition, params)`
 
 ```js
-// Find users who are admin OR active
-async getAdminOrActiveUsers() {
-  return this.table('users')
-    .where('role = ?', ['admin'])
-    .orWhere('status = ?', ['active'])
-    .get();
-}
+this.where('email=?', ['test@example.com']).first();
 ```
 
-**Why:** Adds alternative filter conditions.
-
----
-
-### 7. `whereIn(field, values)`
+### `orWhere(condition, params)`
 
 ```js
-// Find users by a list of IDs
-async getUsersByIds(ids) {
-  return this.select(['id', 'name'])
-    .table('users')
-    .whereIn('id', ids)
-    .get();
-}
+this.where('role=?', ['admin']).orWhere('status=?',['active']).get();
 ```
 
-**Why:** Matches multiple values without repetitive OR statements.
-
----
-
-### 8. `whereNotIn(field, values)`
+### `whereIn(field, values)`
 
 ```js
-// Exclude certain user IDs
-async getAllExcept(ids) {
-  return this.table('users')
-    .whereNotIn('id', ids)
-    .get();
-}
+this.whereIn('id', [1,2,3]).get();
 ```
 
-**Why:** Opposite of `whereIn()` — useful for exclusions.
-
----
-
-### 9. `join(type, table, condition)`
+### `whereNotIn(field, values)`
 
 ```js
-// Get orders with customer details
-async getOrdersWithCustomers() {
-  return this.select(['orders.id', 'customers.name', 'orders.total'])
-    .table('orders')
-    .join('INNER', 'customers', 'orders.customer_id = customers.id')
-    .get();
-}
+this.whereNotIn('id', [1,2,3]).get();
 ```
 
-**Why:** Combines related tables.
-
----
-
-### 10. `groupBy(fields)`
+### `join(type, table, condition)`
 
 ```js
-// Total orders per customer
-async getOrderCountsPerCustomer() {
-  return this.select(['customer_id', 'COUNT(*) as total_orders'])
-    .table('orders')
-    .groupBy(['customer_id'])
-    .get();
-}
+this.join('INNER','customers','orders.customer_id = customers.id').get();
 ```
 
-**Why:** Useful for aggregation queries.
-
----
-
-### 11. `having(condition, params)`
+### `groupBy(fields)`
 
 ```js
-// Customers with more than 5 orders
-async getHighOrderCustomers() {
-  return this.select(['customer_id', 'COUNT(*) as total_orders'])
-    .table('orders')
-    .groupBy(['customer_id'])
-    .having('COUNT(*) > ?', [5])
-    .get();
-}
+this.groupBy(['customer_id']).get();
 ```
 
-**Why:** Filters aggregated results after grouping.
-
----
-
-### 12. `orderBy(field, dir)`
+### `having(condition, params)`
 
 ```js
-// Get latest users
-async getLatestUsers() {
-  return this.table('users')
-    .orderBy('created_at', 'DESC')
-    .get();
-}
+this.having('COUNT(*)> ?', [5]).get();
 ```
 
-**Why:** Sorting results.
-
----
-
-### 13. `limit(n)`
+### `orderBy(field, dir)`
 
 ```js
-// Get top 5 products
-async getTop5Products() {
-  return this.table('products')
-    .orderBy('sales', 'DESC')
-    .limit(5)
-    .get();
-}
+this.orderBy('created_at', 'DESC').get();
 ```
 
-**Why:** Restrict number of rows for pagination or previews.
+### `limit(n)`
+
+```js
+this.limit(5).get();
+```
 
 ---
 
 ## Execution Methods
 
-Execution methods (`get`, `first`, `pluck`, `exists`) would be used **at the end of the chain** to actually run the query.
-
-Example inside model:
+* `get(cacheKey?, isCache?, ttl?)` → Returns an array of results.
+* `first(cacheKey?, isCache?, ttl?)` → Returns first result.
+* `pluck(column, cacheKey?, isCache?, ttl?)` → Returns array of a single column.
+* `exists(cacheKey?, isCache?, ttl?)` → Returns boolean.
 
 ```js
-// Check if user exists by email
-async doesUserExist(email) {
-  return this.table('users')
-    .where('email = ?', [email])
-    .exists();
-}
+const exists = await this.table('users').where('email=?',['test@example.com']).exists();
 ```
 
 ---
 
 ## CRUD Operations
 
-You can mix builder methods with direct operations:
-
 ```js
-// Insert new user
-async createUser(data) {
-  return this.insert('users', data);
-}
-
-// Update user name
-async renameUser(id, name) {
-  return this.update('users', { name }, 'id = ?', [id]);
-}
+await this.insert('users', { name:'John', email:'john@example.com' });
+await this.update('users', { name:'Johnny' }, 'id=?', [1]);
+await this.delete('users', 'id=?', [1]);
+await this.firstOrCreate('users', { email:'john@example.com' }, { name:'John' });
+await this.updateOrInsert('users', { email:'john@example.com' }, { name:'Johnny' });
 ```
 
 ---
@@ -302,21 +226,82 @@ async renameUser(id, name) {
 ## Transaction Support
 
 ```js
-// Create user and profile together
-async createUserWithProfile(userData, profileData) {
-  await this.insertTransactionData([
-    { table: 'users', data: userData },
-    { table: 'profiles', data: profileData }
-  ]);
-  await this.commit();
-}
+await this.insertTransactionData([
+  { table:'users', data:{ name:'John' } },
+  { table:'profiles', data:{ user_id:1, bio:'Developer' } }
+]);
+await this.commit();
+```
+
+---
+
+## KCache (Caching) Methods
+
+`KCache` provides multiple caching strategies: **Redis, Upstash, File, LRU**.
+
+### Initialization
+
+```js
+await KCache.init(config);
+```
+
+### Basic KV operations
+
+| Method                              | Description                     | Example                                                 |
+| ----------------------------------- | ------------------------------- | ------------------------------------------------------- |
+| `get(key)`                          | Retrieve a value                | `await KCache.get('user_1');`                           |
+| `set(key, value, mode?, duration?)` | Store a value with optional TTL | `await KCache.set('user_1', {name:'John'}, 'EX', 300);` |
+| `delete(key)`                       | Delete a key                    | `await KCache.delete('user_1');`                        |
+| `keys()`                            | List all keys                   | `await KCache.keys();`                                  |
+| `clearAll()`                        | Clear entire cache              | `await KCache.clearAll();`                              |
+| `getAll()`                          | Retrieve all key-value pairs    | `await KCache.getAll();`                                |
+
+### Hash Operations
+
+| Method                   | Description            | Example                                                |
+| ------------------------ | ---------------------- | ------------------------------------------------------ |
+| `hset(hash, key, value)` | Set field in a hash    | `await KCache.hset('users', 'user_1', {name:'John'});` |
+| `hget(hash, key)`        | Get field from hash    | `await KCache.hget('users','user_1');`                 |
+| `hgetAll(hash)`          | Get all fields in hash | `await KCache.hgetAll('users');`                       |
+| `hdel(hash, key)`        | Delete field in hash   | `await KCache.hdel('users','user_1');`                 |
+
+### List Operations
+
+| Method                      | Description          | Example                                |
+| --------------------------- | -------------------- | -------------------------------------- |
+| `rpush(list, value)`        | Append value to list | `await KCache.rpush('queue', 'job1');` |
+| `lpush(list, value)`        | Prepend value        | `await KCache.lpush('queue','job0');`  |
+| `rpop(list)`                | Pop last element     | `await KCache.rpop('queue');`          |
+| `lpop(list)`                | Pop first element    | `await KCache.lpop('queue');`          |
+| `lrange(list, start, stop)` | Get range of list    | `await KCache.lrange('queue',0,5);`    |
+
+### Set Operations
+
+| Method                  | Description      | Example                                    |
+| ----------------------- | ---------------- | ------------------------------------------ |
+| `sadd(set, value)`      | Add member       | `await KCache.sadd('roles','admin');`      |
+| `smembers(set)`         | List members     | `await KCache.smembers('roles');`          |
+| `sismember(set, value)` | Check membership | `await KCache.sismember('roles','admin');` |
+| `srem(set, value)`      | Remove member    | `await KCache.srem('roles','admin');`      |
+
+### Pub/Sub Operations
+
+| Method                         | Description          | Example                                                    |
+| ------------------------------ | -------------------- | ---------------------------------------------------------- |
+| `publish(channel, message)`    | Publish message      | `await KCache.publish('news','hello');`                    |
+| `subscribe(channel, callback)` | Subscribe to channel | `await KCache.subscribe('news', msg => console.log(msg));` |
+
+### Quit Cache Connection
+
+```js
+await KCache.quit();
 ```
 
 ---
 
 ## Error Handling
 
-* All methods return a **consistent object**:
+All methods return a **consistent object** in case of errors:
 
 ```js
 {
@@ -326,13 +311,11 @@ async createUserWithProfile(userData, profileData) {
 }
 ```
 
-* Prevents unhandled rejections in application code.
-
 ---
 
 ## License
 
-MIT © Your Name
+MIT © Usiobaifo A Kenneth
 
 ```
 
@@ -358,5 +341,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 SOFTWARE.
-
 ```
+
+---
+
+This README includes:
+
+* Full **KQBModel ORM query builder and CRUD methods**
+* **Execution methods**
+* **Transaction support**
+* **Detailed KCache documentation** (all KV, hash, list, set, pub/sub)
+* **Usage examples**
+* Ready for GitHub or npm.
+
+---
